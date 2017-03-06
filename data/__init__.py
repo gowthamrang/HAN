@@ -17,11 +17,36 @@ def generate(fname, epoch, batchsize, seed = 24, small=False):
         for i in xrange(0,examples, batchsize):
             minibatch_ind  = index[i:i+batchsize]
             minibatch_ind.sort()
-            yield D['x'][minibatch_ind], D['y'][minibatch_ind]
+            x,y =  D['x'][minibatch_ind], D['y'][minibatch_ind]
+            mask = (x>0).astype(np.float32) 
+            yield x,y,mask
         epoch-=1
     return
 
+
+def create_glove_embeddings(vocabpath, glove):
+    with open(vocabpath+'/vocab.json') as f:
+        data = json.load(f)
+    embed_dim = len(open(glove).readline().split(' '))-1
+    WE = [np.random.normal(0,0.1,embed_dim).tolist() for _ in data]
+    WE[0] = [0.]*embed_dim
+    cnt = 0
+    with open(glove) as f:
+        for line in f:
+            line = line.split(' ')
+            if line[0] in  data:
+                WE[data[line[0]]] = [float(e) for e in line[1:] ]
+                cnt+=1
+            
+        np.save(vocabpath+'/embed.npy', np.array(WE))
+        print np.array(WE).shape
+        print 'Unable to find embeddings for %d tokens = %.3f' %(cnt, cnt*100./len(WE))
+    return 
+
+            
     
+    
+
 
 def preprocess(doc, slenMax, wlenMax):
     """ Take in a string and return a list of list of token-strings of size slenMax X wlenMax
@@ -120,13 +145,13 @@ class yelp():
 if __name__ == '__main__':
     import time
     start = time.time()
-    YELP = yelp()
-    YELP.create_datasets(20,30,False )
-    F = h5.File('yelp-2013/train.h5','r')
-    for x,y in generate('yelp-2013/train.h5',1, 24):
-        YELP.read_dataset(x[0])
-        raw_input(y[0])
-
+    #YELP = yelp()
+    #YELP.create_datasets(20,30,False )
+    #F = h5.File('yelp-2013/train.h5','r')
+    #for x,y,m in generate('yelp-2013/train.h5',1, 24):
+    #    YELP.read_dataset(x[0])
+    #    raw_input(y[0])
+    create_glove_embeddings('yelp-2013','glove/glove.6B.100d.txt')
 
     print 'Time takens %.3f' %(time.time() - start)
     
