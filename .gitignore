@@ -1,3 +1,11 @@
+# Ignore everything
+data/*
+
+# But not these files...
+!data/__init__.py
+
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
